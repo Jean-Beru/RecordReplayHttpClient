@@ -2,28 +2,15 @@
 
 namespace Symfony\HttpClientRecorderBundle\Store;
 
-use Symfony\HttpClientRecorderBundle\Har\HttpRecord;
+use Symfony\HttpClientRecorderBundle\Har\HarFile;
 
 interface StoreInterface
 {
-    /**
-     * @return HttpRecord[]
-     */
-    public function load(string $name): array;
+    public function load(string $name): HarFile;
 
-    /**
-     * @param HttpRecord[] $entries
-     */
-    public function save(string $name, array $entries): void;
+    public function save(string $name, HarFile $har): void;
 
     public function exists(string $name): bool;
 
     public function delete(string $name): void;
-
-    /**
-     * @return string[]
-     */
-    public function list(): array;
-
-    public function purge(): void;
 }

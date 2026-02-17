@@ -5,11 +5,11 @@ namespace Symfony\HttpClientRecorderBundle\HttpClient;
 use Symfony\Component\HttpClient\AsyncDecoratorTrait;
 use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Symfony\HttpClientRecorderBundle\Enum\RecorderMode;
-use Symfony\HttpClientRecorderBundle\Har\HarFileFactory;
-use Symfony\HttpClientRecorderBundle\Har\HttpRecord;
+use Symfony\HttpClientRecorderBundle\Har\HarFile;
 use Symfony\HttpClientRecorderBundle\Matcher\DefaultMatcher;
 use Symfony\HttpClientRecorderBundle\Matcher\MatcherInterface;
 use Symfony\HttpClientRecorderBundle\Store\StoreInterface;
@@ -23,11 +23,10 @@ final class RecorderHttpClient implements HttpClientInterface
 
     public function __construct(
         private readonly HttpClientInterface $inner,
-        private readonly HarFileFactory $harFactory,
         private readonly StoreInterface $store,
-        private MatcherInterface $matcher = new DefaultMatcher(),
-        private readonly string $recordsDir = '',
+        private readonly MatcherInterface $matcher = new DefaultMatcher(),
     ) {
+        $this->client = $inner;
     }
 
     public static function setMode(RecorderMode $mode): void
@@ -46,7 +45,7 @@ final class RecorderHttpClient implements HttpClientInterface
             return $this->inner->request($method, $url, $options);
         }
 
-        $har = $this->harFactory->load(self::$record);
+        $har = $this->store->load(self::$record);
 
         if (RecorderMode::PLAYBACK === self::$mode) {
             return $this->playback($har, $method, $url, $options);
@@ -64,24 +63,29 @@ final class RecorderHttpClient implements HttpClientInterface
             }
         }
 
-        throw new \RuntimeException('Unknown recorder mode');
+        throw new \RuntimeException('Unknown recorder mode.');
     }
 
-    private function playback($har, string $method, string $url, array $options): ResponseInterface
+    /**
+     * @throws TransportExceptionInterface
+     */
+    private function playback(HarFile $har, string $method, string $url, array $options): ResponseInterface
     {
         $response = $har->findEntry($this->matcher, $method, $url, $options);
 
         return (new MockHttpClient($response))->request($method, $url, $options);
     }
 
-    private function record($har, string $method, string $url, array $options): ResponseInterface
+    /**
+     * @throws TransportExceptionInterface
+     */
+    private function record(HarFile $har, string $method, string $url, array $options): ResponseInterface
     {
         $response = $this->inner->request($method, $url, $options);
 
-        $record = new HttpRecord($response, $method, $url, $options);
-        $har->addEntry($this->matcher, $record);
+        $har->addEntry($this->matcher, $response, $method, $url, $options);
 
-        $this->store->save(self::$record, $har->getRecords());
+        $this->store->save(self::$record, $har);
 
         return (new MockHttpClient($response))->request($method, $url, $options);
     }

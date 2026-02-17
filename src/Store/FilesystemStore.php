@@ -3,59 +3,53 @@
 namespace Symfony\HttpClientRecorderBundle\Store;
 
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\HttpClientRecorderBundle\Har\HttpRecord;
+use Symfony\HttpClientRecorderBundle\Har\HarFile;
 
-final readonly class FilesystemStore implements StoreInterface
+final class FilesystemStore implements StoreInterface
 {
-    public function __construct(private string $dir)
+    public function __construct(private string $directory, private Filesystem $filesystem)
     {
+        $this->filesystem = new Filesystem();
+        $this->directory = rtrim($directory, DIRECTORY_SEPARATOR);
+
+        if (!$this->filesystem->exists($this->directory)) {
+            $this->filesystem->mkdir($this->directory);
+        }
     }
 
-    public function load(string $name): array
+    private function path(string $name): string
     {
-        $path = $this->dir.'/'.$name;
+        return $this->directory.DIRECTORY_SEPARATOR.$name;
+    }
+
+    public function load(string $name): HarFile
+    {
+        $path = $this->path($name);
 
         if (!is_file($path)) {
-            return [];
+            return HarFile::create();
         }
 
-        $json = file_get_contents($path);
-        $entries = json_decode($json, true, flags: \JSON_THROW_ON_ERROR);
-
-        return array_map(fn ($entry) => HttpRecord::fromArray($entry), $entries);
+        return new HarFile(
+            json_decode(file_get_contents($path), true, \JSON_THROW_ON_ERROR)
+        );
     }
 
-    public function save(string $name, array $entries): void
+    public function save(string $name, HarFile $har): void
     {
-        $path = $this->dir.'/'.$name;
-
-        $data = array_map(fn (HttpRecord $r) => $r->toArray(), $entries);
-
-        (new Filesystem())->dumpFile($path, json_encode($data, \JSON_PRETTY_PRINT));
+        $this->filesystem->dumpFile(
+            $this->path($name),
+            json_encode($har->toArray(), \JSON_PRETTY_PRINT)
+        );
     }
 
     public function exists(string $name): bool
     {
-        return is_file($this->dir.'/'.$name);
+        return is_file($this->path($name));
     }
 
     public function delete(string $name): void
     {
-        $fs = new Filesystem();
-        $path = $this->dir.'/'.$name;
-        if (is_file($path)) {
-            $fs->remove($path);
-        }
-    }
-
-    public function list(): array
-    {
-        return glob($this->dir.'/*.har') ?: [];
-    }
-
-    public function purge(): void
-    {
-        $fs = new Filesystem();
-        $fs->remove(glob($this->dir.'/*.har') ?: []);
+        $this->filesystem->remove($this->path($name));
     }
 }

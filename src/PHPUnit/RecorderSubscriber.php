@@ -25,14 +25,14 @@ final class RecorderSubscriber implements PreparationStartedSubscriber
         $mode = null;
         $record = null;
 
-        if ($attributes = new \ReflectionMethod($className, $methodName)->getAttributes(UseRecord::class)) {
+        if ($attributes = (new \ReflectionMethod($className, $methodName))->getAttributes(UseRecord::class)) {
             /** @var UseRecord $inst */
             $inst = $attributes[0]->newInstance();
             $mode = $inst->mode;
             $record = $inst->record;
         }
 
-        if ($attributes = new \ReflectionClass($className)->getAttributes(UseRecord::class)) {
+        if ($attributes = (new \ReflectionClass($className))->getAttributes(UseRecord::class)) {
             /** @var UseRecord $inst */
             $inst = $attributes[0]->newInstance();
             $mode ??= $inst->mode;
