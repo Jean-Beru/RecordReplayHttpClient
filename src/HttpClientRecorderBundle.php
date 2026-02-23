@@ -18,7 +18,7 @@ final class HttpClientRecorderBundle extends AbstractBundle implements CompilerP
         $definition->rootNode()
             ->children()
             ->booleanNode('enabled')->defaultFalse()->end()
-            ->scalarNode('records_path')
+            ->stringNode('records_path')
             ->defaultValue('%kernel.project_dir%/tests/fixtures/records')
             ->end();
     }

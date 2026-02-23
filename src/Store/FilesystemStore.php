@@ -42,14 +42,4 @@ final class FilesystemStore implements StoreInterface
             json_encode($har->toArray(), \JSON_PRETTY_PRINT)
         );
     }
-
-    public function exists(string $name): bool
-    {
-        return is_file($this->path($name));
-    }
-
-    public function delete(string $name): void
-    {
-        $this->filesystem->remove($this->path($name));
-    }
 }
