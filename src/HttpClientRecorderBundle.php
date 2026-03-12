@@ -17,10 +17,10 @@ final class HttpClientRecorderBundle extends AbstractBundle implements CompilerP
     {
         $definition->rootNode()
             ->children()
-            ->booleanNode('enabled')->defaultFalse()->end()
-            ->stringNode('records_path')
-            ->defaultValue('%kernel.project_dir%/tests/fixtures/records')
-            ->end();
+                ->booleanNode('enabled')->defaultFalse()->end()
+                ->stringNode('records_path')->defaultValue('%kernel.project_dir%/tests/fixtures/records')->end()
+            ->end()
+        ;
     }
 
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
