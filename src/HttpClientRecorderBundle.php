@@ -6,11 +6,10 @@ use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use Symfony\Component\DependencyInjection\Parameter;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
-use Symfony\HttpClientRecorderBundle\Har\HarFileFactory;
 use Symfony\HttpClientRecorderBundle\HttpClient\RecorderHttpClient;
+use Symfony\HttpClientRecorderBundle\Store\FilesystemStore;
 
 final class HttpClientRecorderBundle extends AbstractBundle implements CompilerPassInterface
 {
@@ -19,9 +18,7 @@ final class HttpClientRecorderBundle extends AbstractBundle implements CompilerP
         $definition->rootNode()
             ->children()
                 ->booleanNode('enabled')->defaultFalse()->end()
-                ->scalarNode('records_path')
-                    ->defaultValue('%kernel.project_dir%/tests/fixtures/records')
-                ->end()
+                ->stringNode('records_path')->defaultValue('%kernel.project_dir%/tests/fixtures/records')->end()
             ->end()
         ;
     }
@@ -46,7 +43,12 @@ final class HttpClientRecorderBundle extends AbstractBundle implements CompilerP
             return;
         }
 
-        $container->register('http_client.recorder.factory', HarFileFactory::class);
+        $recordsPath = $container->getParameter('http_client.recorder.records_path');
+
+        if (!$container->hasDefinition('http_client.recorder.store')) {
+            $container->register('http_client.recorder.store', FilesystemStore::class)
+                ->setArguments([$recordsPath, new Reference('filesystem')]);
+        }
 
         foreach ($container->findTaggedServiceIds('http_client.client') as $serviceId => $attributes) {
             $container
@@ -54,11 +56,9 @@ final class HttpClientRecorderBundle extends AbstractBundle implements CompilerP
                 ->setDecoratedService($serviceId)
                 ->setArguments([
                     new Reference('http_client.recorder.inner'),
-                    new Reference('http_client.recorder.factory'),
-                    new Parameter('http_client.recorder.records_path'),
+                    new Reference('http_client.recorder.store'),
                 ])
-                ->addTag('http_client.client')
-            ;
+                ->addTag('http_client.client');
         }
     }
 }

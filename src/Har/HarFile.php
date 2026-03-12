@@ -10,9 +10,8 @@ use Symfony\HttpClientRecorderBundle\Matcher\MatcherInterface;
 
 final class HarFile
 {
-    public function __construct(
-        private array $har,
-    ) {
+    public function __construct(private array $har)
+    {
     }
 
     public static function create(): self
@@ -24,15 +23,6 @@ final class HarFile
                 'entries' => [],
             ],
         ]);
-    }
-
-    public static function createFromFile(string $path): self
-    {
-        if (!is_file($path)) {
-            return self::create();
-        }
-
-        return new self(json_decode(file_get_contents($path), true, \JSON_THROW_ON_ERROR));
     }
 
     public function findEntry(MatcherInterface $matcher, string $method, string $url, array $options = []): ResponseInterface
@@ -58,6 +48,9 @@ final class HarFile
             'request' => [
                 'method' => $method,
                 'url' => $url,
+                'postData' => isset($options['body'])
+                    ? ['text' => $options['body']]
+                    : null,
             ],
             'response' => [
                 'status' => $response->getStatusCode(),
@@ -78,22 +71,6 @@ final class HarFile
         $this->har['log']['entries'][] = $entry;
 
         return $this;
-    }
-
-    private function matches(array $entry, string $method, string $url, array $options): bool
-    {
-        if ($entry['request']['method'] !== $method) {
-            return false;
-        }
-
-        if ($entry['request']['url'] !== $url) {
-            return false;
-        }
-
-        $expectedBody = $options['body'] ?? null;
-        $actualBody = $entry['request']['postData']['text'] ?? null;
-
-        return $expectedBody === $actualBody;
     }
 
     public function toArray(): array
