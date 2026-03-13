@@ -87,6 +87,6 @@ final class RecorderHttpClient implements HttpClientInterface
 
         $this->store->save(self::$record, $har);
 
-        return (new MockHttpClient($response))->request($method, $url, $options);
+        return $response;
     }
 }
