@@ -31,7 +31,7 @@ final class FilesystemStore implements StoreInterface
         }
 
         return new HarFile(
-            json_decode(file_get_contents($path), true, \JSON_THROW_ON_ERROR)
+            json_decode(file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR)
         );
     }
 
