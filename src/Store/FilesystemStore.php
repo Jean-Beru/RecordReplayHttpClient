@@ -9,7 +9,6 @@ final class FilesystemStore implements StoreInterface
 {
     public function __construct(private string $directory, private Filesystem $filesystem)
     {
-        $this->filesystem = new Filesystem();
         $this->directory = rtrim($directory, DIRECTORY_SEPARATOR);
 
         if (!$this->filesystem->exists($this->directory)) {
