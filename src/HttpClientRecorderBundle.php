@@ -55,7 +55,7 @@ final class HttpClientRecorderBundle extends AbstractBundle implements CompilerP
                 ->register("$serviceId.recorder", RecorderHttpClient::class)
                 ->setDecoratedService($serviceId)
                 ->setArguments([
-                    new Reference('http_client.recorder.inner'),
+                    new Reference("$serviceId.recorder.inner"),
                     new Reference('http_client.recorder.store'),
                 ])
                 ->addTag('http_client.client');
