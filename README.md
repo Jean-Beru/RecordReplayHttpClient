@@ -68,4 +68,3 @@ client.replayRequest('https://api.example.com/data');
 ## Conclusion
 RecordReplayHttpClient is a feature-rich library that simplifies handling HTTP requests for testing scenarios. Its recording and replaying capabilities make it an invaluable tool for developers looking to enhance their testing processes.
 
-For more information, check the [official documentation](https://github.com/imenezzine/RecordReplayHttpClient).
